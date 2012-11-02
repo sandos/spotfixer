@@ -21,17 +21,45 @@
   (def a (map #(assoc (parse-string (fetch-url (str apiurl %))) "ID" %) 
               (map 
                 #(.substring % 4 26)
-                (into [] (.split (slurp "names") "\n"))))))
+                (into [] (.split (slurp "names2") "\n"))))))
 
 (-main)
 
-(def b (map #([
-               (get-in % ["track" "name"])
-               (get-in % ["track" "track-number"])
-               (get-in % ["track" "artists" 0 "name"])
-               (get-in % ["track" "album" "name"])
-               (get-in % ["track" "album" "released"])
-               (get-in % ["ID"])
-               ])
+(def b (map #(merge { 
+               "track" (get-in % ["track" "name"])
+               "nr" (get-in % ["track" "track-number"])
+               "artist" (get-in % ["track" "artists" 0 "name"])
+               "album" (get-in % ["track" "album" "name"])
+               "year" (get-in % ["track" "album" "released"])
+               "ID" (get-in % ["ID"])
+               } {})
             a))
+
+(def tags (map #(vec (list
+                  (str "TITLE=" (% "track") "\nALBUM=" (% "album") "\nTRACKNUMBER=" (% "nr") "\nYEAR=" (% "year") "\n")
+                  (str "tags" (% "ID"))
+                  )) b)
+                  )
+
+;Dump files to disk, one tags file per song
+#_(doseq [x tags]
+  (spit (second x) (first x)))
+
+(def cmds (map #(str "vorbiscomment -w -c tags" (% "ID") " dump" (% "ID") "\n") b))
+;Write command file
+#_(spit "e.e" (reduce str cmds))
+
+(def encodecmds (map #(str "sox dump" (% "ID") " -C -6.0 out" (% "ID") ".mp3\n") b))
+;Write command file
+#_(spit "e.e" (reduce str encodecmds))
+
+(defn r[title from to]
+  (.replace title from to))
+
+(defn fixname [title]
+  (r (r (r (r (r (r (r (r (r (r title " " "_") "/" "_") "\\?" "_") "<" "_") ">" "_") "\\" "_")) ":" "_") "\\|" "_") "\"" "_")) 
+
+(def renamecmds (map #(str "mv dump" (% "ID") ".mp3 " (fixname (% "track")) ".mp3\n") b))
+;Write command file
+#_(spit "e.e" (reduce str renamecmds))
 
