@@ -21,7 +21,7 @@
   (def a (map #(assoc (parse-string (fetch-url (str apiurl %))) "ID" %) 
               (map 
                 #(.substring % 4 26)
-                (into [] (.split (slurp "names2") "\n"))))))
+                (into [] (.split (slurp "bilusb") "\n"))))))
 
 (-main)
 
@@ -56,10 +56,22 @@
 (defn r[title from to]
   (.replace title from to))
 
+;Also, period at end of name obviously will not work... TODO
 (defn fixname [title]
-  (r (r (r (r (r (r (r (r (r (r title " " "_") "/" "_") "\\?" "_") "<" "_") ">" "_") "\\" "_")) ":" "_") "\\|" "_") "\"" "_")) 
+  (->
+    (r title " " "_")
+    (r  "/" "_")
+    (r "?" "_")
+    (r "<" "_")
+    (r ">" "_")
+    (r "\\" "_")
+    (r ":" "_")
+    (r "|" "_")
+    (r "\"" "_")
+    (r "^" "_")
+    ))
 
-(def renamecmds (map #(str "mv dump" (% "ID") ".mp3 " (fixname (% "track")) ".mp3\n") b))
+(def renamecmds (map #(str "mv out" (% "ID") ".mp3 " (fixname (% "track")) ".mp3\n") b))
 ;Write command file
 #_(spit "e.e" (reduce str renamecmds))
 
