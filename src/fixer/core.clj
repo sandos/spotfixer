@@ -21,7 +21,7 @@
   (def a (map #(assoc (parse-string (fetch-url (str apiurl %))) "ID" %) 
               (map 
                 #(.substring % 4 26)
-                (into [] (.split (slurp "bilusb") "\n"))))))
+                (into [] (.split (slurp "rock") "\n"))))))
 
 (-main)
 
@@ -47,11 +47,13 @@
 
 (def cmds (map #(str "vorbiscomment -w -c tags" (% "ID") " dump" (% "ID") "\n") b))
 ;Write command file
-#_(spit "e.e" (reduce str cmds))
+#_(spit "tagscommands" (reduce str cmds))
 
 (def encodecmds (map #(str "sox dump" (% "ID") " -C -6.0 out" (% "ID") ".mp3\n") b))
 ;Write command file
-#_(spit "e.e" (reduce str encodecmds))
+#_(spit "encodecommands" "")
+#_(doseq [x encodecmds]
+  (spit "encodecommands" x :append true))
 
 (defn r[title from to]
   (.replace title from to))
@@ -59,8 +61,8 @@
 ;Also, period at end of name obviously will not work... TODO
 (defn fixname [title]
   (->
-    (r title " " "_")
-    (r  "/" "_")
+;    (r title " " "_")
+    (r title "/" "_")
     (r "?" "_")
     (r "<" "_")
     (r ">" "_")
@@ -71,7 +73,7 @@
     (r "^" "_")
     ))
 
-(def renamecmds (map #(str "mv out" (% "ID") ".mp3 " (fixname (% "track")) ".mp3\n") b))
+(def renamecmds (map #(str "mv out" (% "ID") ".mp3 \"" (fixname (% "track")) "-" (fixname (% "artist")) ".mp3\"\n") b))
 ;Write command file
-#_(spit "e.e" (reduce str renamecmds))
+#_(spit "renamecommands" (reduce str renamecmds))
 
