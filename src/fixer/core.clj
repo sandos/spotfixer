@@ -21,7 +21,7 @@
   (def a (map #(assoc (parse-string (fetch-url (str apiurl %))) "ID" %) 
               (map 
                 #(.substring % 4 26)
-                (into [] (.split (slurp "rock") "\n"))))))
+                (into [] (.split (slurp "stiftelsenls") "\n"))))))
 
 (-main)
 
@@ -44,6 +44,12 @@
 ;Dump files to disk, one tags file per song
 #_(doseq [x tags]
   (spit (second x) (first x)))
+
+;ISO-8859-1 !
+#_(doseq [x tags]
+  (with-open [wrt (java.io.PrintWriter. (second x) "ISO-8859-1")]
+    (println (first x))
+    (.println wrt (first x))))
 
 (def cmds (map #(str "vorbiscomment -w -c tags" (% "ID") " dump" (% "ID") "\n") b))
 ;Write command file
@@ -73,7 +79,7 @@
     (r "^" "_")
     ))
 
-(def renamecmds (map #(str "mv out" (% "ID") ".mp3 \"" (fixname (% "track")) "-" (fixname (% "artist")) ".mp3\"\n") b))
+(def renamecmds (map #(str "mv out" (% "ID") ".mp3 \"" (fixname (% "artist")) "-" (fixname (% "track")) ".mp3\"\n") b))
 ;Write command file
 #_(spit "renamecommands" (reduce str renamecmds))
 
